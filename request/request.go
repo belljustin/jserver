@@ -2,7 +2,7 @@ package request
 
 import (
 	"bufio"
-	"io"
+	"bytes"
 )
 
 type Request struct {
@@ -11,8 +11,8 @@ type Request struct {
 	Body    string
 }
 
-func ReadRequest(buf io.Reader) *Request {
-	scanner := bufio.NewScanner(buf)
+func ReadRequest(buf bytes.Buffer, bodyBuf bytes.Buffer) *Request {
+	scanner := bufio.NewScanner(&buf)
 	scanner.Split(bufio.ScanLines)
 
 	// request-line
@@ -33,6 +33,6 @@ func ReadRequest(buf io.Reader) *Request {
 	return &Request{
 		*requestLine,
 		headers,
-		"",
+		bodyBuf.String(),
 	}
 }
