@@ -32,11 +32,11 @@ func main() {
 			// TODO: handle error
 			fmt.Println(err)
 		}
-		go handleConnection(conn)
+		go handleConnection(conn, echoHandler)
 	}
 }
 
-func handleConnection(conn net.Conn) {
+func handleConnection(conn net.Conn, handle handler) {
 	defer conn.Close()
 
 	fmt.Println("Handling connection")
@@ -58,8 +58,7 @@ func handleConnection(conn net.Conn) {
 		bodyBuf.Write(tmp)
 	}
 
-	resHeaders := make(map[string]string)
-	res := response.NewResponse(200, resHeaders, bodyBuf.String())
+	res := handle(req)
 	conn.Write(res.Bytes())
 }
 
@@ -98,4 +97,13 @@ func readRequestLineAndHeaders(r io.Reader) (buf bytes.Buffer, bodyBuf bytes.Buf
 		buf.Write(tmp[:n])
 	}
 	return buf, bodyBuf
+}
+
+// Hanlders
+
+type handler func(*request.Request) *response.Response
+
+func echoHandler(req *request.Request) *response.Response {
+	headers := make(map[string]string)
+	return response.NewResponse(200, headers, req.Body)
 }
