@@ -11,7 +11,7 @@ type Request struct {
 	Body    string
 }
 
-func ReadRequest(buf bytes.Buffer, bodyBuf bytes.Buffer) *Request {
+func ParseRequest(buf bytes.Buffer, bodyBuf bytes.Buffer) *Request {
 	scanner := bufio.NewScanner(&buf)
 	scanner.Split(bufio.ScanLines)
 

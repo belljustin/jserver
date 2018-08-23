@@ -41,8 +41,8 @@ func handleConnection(conn net.Conn, handle handler) {
 
 	fmt.Println("Handling connection")
 
-	buf, bodyBuf := readRequestLineAndHeaders(conn)
-	req := request.ReadRequest(buf, bodyBuf)
+	buf, bodyBuf := readHeader(conn)
+	req := request.ParseRequest(buf, bodyBuf)
 	fmt.Printf("%+v\n", req)
 
 	// If request is POST, use Content-Length header to read rest of request
@@ -62,7 +62,7 @@ func handleConnection(conn net.Conn, handle handler) {
 	conn.Write(res.Bytes())
 }
 
-func readRequestLineAndHeaders(r io.Reader) (buf bytes.Buffer, bodyBuf bytes.Buffer) {
+func readHeader(r io.Reader) (headerBuf bytes.Buffer, bodyBuf bytes.Buffer) {
 	tmp := make([]byte, 256)
 
 	// delim CRLF CRLF marks end of request line and headers
@@ -70,12 +70,7 @@ func readRequestLineAndHeaders(r io.Reader) (buf bytes.Buffer, bodyBuf bytes.Buf
 	i := 0
 
 	for {
-		n, err := r.Read(tmp)
-		if err != nil {
-			if err != io.EOF {
-				panic("Encountered an error parsing request line an headers")
-			}
-		}
+		n, _ := r.Read(tmp)
 
 		for m, b := range tmp {
 			// increment the counter if the next delim is found
@@ -85,18 +80,18 @@ func readRequestLineAndHeaders(r io.Reader) (buf bytes.Buffer, bodyBuf bytes.Buf
 				i = 0
 			}
 
-			// if found entire delim, write part before to buf and the rest to
-			// the body buffer
+			// if entire delim is found, write part before to headerBuf and
+			// the rest to the body buffer
 			if i == len(delim) {
-				buf.Write(tmp[:m])
+				headerBuf.Write(tmp[:m])
 				bodyBuf.Write(tmp[m:n])
-				return buf, bodyBuf
+				return headerBuf, bodyBuf
 			}
 		}
 
-		buf.Write(tmp[:n])
+		headerBuf.Write(tmp[:n])
 	}
-	return buf, bodyBuf
+	return headerBuf, bodyBuf
 }
 
 // Hanlders
